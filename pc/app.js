@@ -603,6 +603,7 @@ const app = {
         const exists = this.characters.some(char => char.name === name);
         if (exists) {
             this.showStatus(`キャラクター「${name}」は既に登録されています`);
+            this.renderCharacterList(); // リストを更新
             return;
         }
         
@@ -616,6 +617,7 @@ const app = {
         
         this.updateCharacterButtons();
         this.setupKeyboardShortcuts();
+        this.renderCharacterList(); // リストを更新
         
         const shortcutText = shortcut ? `(ショートカット: ${shortcut})` : '';
         this.showStatus(`キャラクター「${name}」を追加しました ${shortcutText}`);
@@ -2995,6 +2997,107 @@ const app = {
 
     hideHelp() {
         document.getElementById('helpDialog').style.display = 'none';
+    },
+
+    // ============================================================
+    // キャラクター管理ダイアログ
+    // ============================================================
+    openCharacterManagerDialog() {
+        this.renderCharacterList();
+        document.getElementById('charManagerDialog').style.display = 'flex';
+    },
+
+    closeCharacterManagerDialog() {
+        document.getElementById('charManagerDialog').style.display = 'none';
+    },
+
+    renderCharacterList() {
+        const listContainer = document.getElementById('charManagerList');
+        
+        if (!listContainer) {
+            console.error('charManagerList not found!');
+            return;
+        }
+        
+        listContainer.innerHTML = '';
+        
+        if (this.characters.length === 0) {
+            listContainer.innerHTML = '<div class="char-empty">登録されているキャラクターがありません<br>「新規キャラクター追加」から登録してください</div>';
+            return;
+        }
+        
+        this.characters.forEach((char, index) => {
+            const item = document.createElement('div');
+            item.className = 'char-item';
+            
+            const shortcutText = char.shortcut ? char.shortcut : '未設定';
+            
+            item.innerHTML = `
+                <div class="char-item-info">
+                    <div class="char-item-name">${char.name}</div>
+                    <div class="char-item-shortcut">ショートカット: ${shortcutText}</div>
+                </div>
+                <div class="char-item-actions">
+                    <button class="char-item-btn char-edit-btn" onclick="app.editCharacter(${index})">✏️ 編集</button>
+                    <button class="char-item-btn char-delete-btn" onclick="app.deleteCharacter(${index})">🗑️ 削除</button>
+                </div>
+            `;
+            
+            listContainer.appendChild(item);
+        });
+    },
+
+    editCharacter(index) {
+        const char = this.characters[index];
+        if (!char) return;
+        
+        const newName = prompt('キャラクター名を入力してください:', char.name);
+        if (newName === null) return; // キャンセル
+        
+        if (!newName.trim()) {
+            alert('キャラクター名を入力してください');
+            return;
+        }
+        
+        // 同じ名前がないかチェック（自分以外）
+        const exists = this.characters.some((c, i) => i !== index && c.name === newName);
+        if (exists) {
+            alert(`キャラクター「${newName}」は既に登録されています`);
+            return;
+        }
+        
+        const newShortcut = prompt(`「${newName}」のショートカットキーを入力してください\n(例: Ctrl+1, Ctrl+Shift+A)\n空欄の場合はショートカットなし`, char.shortcut || '');
+        if (newShortcut === null) return; // キャンセル
+        
+        // 更新
+        this.characters[index].name = newName;
+        this.characters[index].shortcut = newShortcut || '';
+        
+        // UI更新
+        this.renderCharacterList();
+        this.updateCharacterButtons();
+        this.setupKeyboardShortcuts();
+        
+        const shortcutText = newShortcut ? `(ショートカット: ${newShortcut})` : '';
+        this.showStatus(`キャラクター「${newName}」を更新しました ${shortcutText}`);
+    },
+
+    deleteCharacter(index) {
+        const char = this.characters[index];
+        if (!char) return;
+        
+        if (!confirm(`キャラクター「${char.name}」を削除しますか？`)) {
+            return;
+        }
+        
+        this.characters.splice(index, 1);
+        
+        // UI更新
+        this.renderCharacterList();
+        this.updateCharacterButtons();
+        this.setupKeyboardShortcuts();
+        
+        this.showStatus(`キャラクター「${char.name}」を削除しました`);
     }
 };
 

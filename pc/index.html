@@ -311,6 +311,136 @@
             background: #8b6a5b;
         }
         
+        /* キャラクター管理ダイアログ */
+        .char-manager-dialog {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        .char-manager-content {
+            background: #e7d0a9;
+            border: 2px solid #7c5b53;
+            border-radius: 12px;
+            width: 600px;
+            max-width: 90vw;
+            max-height: 80vh;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+        }
+        .char-manager-header {
+            background: #7c5b53;
+            color: white;
+            padding: 15px 20px;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .char-manager-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .char-manager-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .char-item {
+            background: white;
+            border: 1px solid #c4a88b;
+            border-radius: 8px;
+            padding: 12px 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .char-item-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .char-item-name {
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+        }
+        .char-item-shortcut {
+            font-size: 12px;
+            color: #666;
+        }
+        .char-item-actions {
+            display: flex;
+            gap: 5px;
+        }
+        .char-item-btn {
+            padding: 5px 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .char-edit-btn {
+            background: #7c5b53;
+            color: white;
+        }
+        .char-edit-btn:hover {
+            background: #8b6a5b;
+        }
+        .char-delete-btn {
+            background: #b85a6b;
+            color: white;
+        }
+        .char-delete-btn:hover {
+            background: #c86a7b;
+        }
+        .char-manager-footer {
+            background: #d4b89b;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .char-manager-btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .char-add-btn {
+            background: #6b8b5a;
+            color: white;
+            flex: 1;
+        }
+        .char-add-btn:hover {
+            background: #7b9b6a;
+        }
+        .char-close-btn {
+            background: #7c5b53;
+            color: white;
+        }
+        .char-close-btn:hover {
+            background: #8b6a5b;
+        }
+        .char-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+            font-size: 14px;
+        }
+        
         ::-webkit-scrollbar { width: 6px; } 
         ::-webkit-scrollbar-track { background: #f1f1f1; } 
         ::-webkit-scrollbar-thumb { background: #c4a88b; }
@@ -432,6 +562,24 @@
         </div>
     </div>
 
+    <!-- キャラクター管理ダイアログ -->
+    <div id="charManagerDialog" class="char-manager-dialog">
+        <div class="char-manager-content">
+            <div class="char-manager-header">
+                🎭 キャラクター管理
+            </div>
+            <div class="char-manager-body">
+                <div id="charManagerList" class="char-manager-list">
+                    <!-- キャラクターリストがここに動的に生成されます -->
+                </div>
+            </div>
+            <div class="char-manager-footer">
+                <button class="char-manager-btn char-add-btn" onclick="app.openCharacterManager()">➕ 新規キャラクター追加</button>
+                <button class="char-manager-btn char-close-btn" onclick="app.closeCharacterManagerDialog()">閉じる</button>
+            </div>
+        </div>
+    </div>
+
     <div id="mainApp" class="app-container" style="display: none;">
         <div class="header">
         </div>
@@ -471,6 +619,8 @@
             <button class="menu-btn" onclick="app.loadProject()">読込</button>
             <button class="menu-btn" onclick="app.exportProject()">エクスポート</button>
             <button class="menu-btn" onclick="app.exportTxt()">TXT書出</button>
+            <div class="menu-separator"></div>
+            <button class="menu-btn" onclick="app.openCharacterManagerDialog()">キャラクター管理</button>
             <div class="menu-separator"></div>
             <button class="menu-btn" onclick="app.showAnalysis()">分析</button>
             <div class="menu-separator"></div>
