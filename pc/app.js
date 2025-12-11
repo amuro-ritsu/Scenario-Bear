@@ -166,7 +166,20 @@ const app = {
         // プロジェクトデータを設定
         this.currentProject = name;
         this.cuts = cuts;
-        this.characters = project.characters || [];
+        
+        // charactersの互換性対応（旧形式の文字列配列を新形式のオブジェクト配列に変換）
+        const loadedCharacters = project.characters || [];
+        if (loadedCharacters.length > 0 && typeof loadedCharacters[0] === 'string') {
+            // 旧形式（文字列配列）の場合、新形式に変換
+            this.characters = loadedCharacters.map(name => ({
+                name: name,
+                shortcut: ''
+            }));
+        } else {
+            // 新形式（オブジェクト配列）の場合、そのまま使用
+            this.characters = loadedCharacters;
+        }
+        
         this.currentCut = -1; // loadCut(0)が確実にシーン切り替えとして認識されるように
         
         document.getElementById('projectTitle').value = project.title || '';
@@ -350,6 +363,9 @@ const app = {
                 localStorage.setItem(`memo_${this.currentProject}`, document.getElementById('memoEditor').value);
             }
         });
+        
+        // キーボードショートカット設定
+        this.setupKeyboardShortcuts();
     },
 
     startClock() {
@@ -581,11 +597,28 @@ const app = {
 
     openCharacterManager() {
         const name = prompt('キャラクター名を入力してください:');
-        if (name && !this.characters.includes(name)) {
-            this.characters.push(name);
-            this.updateCharacterButtons();
-            this.showStatus(`キャラクター「${name}」を追加しました`);
+        if (!name) return;
+        
+        // 既に登録されているかチェック
+        const exists = this.characters.some(char => char.name === name);
+        if (exists) {
+            this.showStatus(`キャラクター「${name}」は既に登録されています`);
+            return;
         }
+        
+        // ショートカットキーを入力
+        const shortcut = prompt(`「${name}」のショートカットキーを入力してください\n(例: Ctrl+1, Ctrl+Shift+A)\n空欄の場合はショートカットなし`, '');
+        
+        this.characters.push({
+            name: name,
+            shortcut: shortcut || ''
+        });
+        
+        this.updateCharacterButtons();
+        this.setupKeyboardShortcuts();
+        
+        const shortcutText = shortcut ? `(ショートカット: ${shortcut})` : '';
+        this.showStatus(`キャラクター「${name}」を追加しました ${shortcutText}`);
     },
 
     updateCharacterButtons() {
@@ -603,8 +636,11 @@ const app = {
         this.characters.forEach(char => {
             const btn = document.createElement('button');
             btn.className = 'char-button';
-            btn.textContent = char;
-            btn.onclick = () => this.insertCharacter(char);
+            // ショートカットキーがある場合は表示
+            const shortcutDisplay = char.shortcut ? ` [${char.shortcut}]` : '';
+            btn.textContent = char.name + shortcutDisplay;
+            btn.onclick = () => this.insertCharacter(char.name);
+            btn.title = char.shortcut ? `ショートカット: ${char.shortcut}` : char.name;
             panel.appendChild(btn);
         });
         
@@ -681,6 +717,72 @@ const app = {
         editor.focus();
         this.saveCutContent();
         this.updateCharCount();
+    },
+
+    setupKeyboardShortcuts() {
+        // 既存のリスナーを削除（重複登録防止）
+        if (this.keyboardHandler) {
+            document.removeEventListener('keydown', this.keyboardHandler);
+        }
+        
+        // 新しいキーボードイベントハンドラーを作成
+        this.keyboardHandler = (e) => {
+            // contentEditorにフォーカスがある時のみ動作
+            const editor = document.getElementById('contentEditor');
+            if (document.activeElement !== editor) return;
+            
+            // ショートカットキーと一致するキャラクターを探す
+            for (const char of this.characters) {
+                if (!char.shortcut) continue;
+                
+                if (this.matchesShortcut(e, char.shortcut)) {
+                    e.preventDefault();
+                    this.insertCharacter(char.name);
+                    return;
+                }
+            }
+        };
+        
+        document.addEventListener('keydown', this.keyboardHandler);
+    },
+
+    matchesShortcut(event, shortcut) {
+        // ショートカット文字列をパース（例: "Ctrl+1", "Ctrl+Shift+A"）
+        const parts = shortcut.toLowerCase().split('+').map(s => s.trim());
+        
+        let needsCtrl = false;
+        let needsShift = false;
+        let needsAlt = false;
+        let key = '';
+        
+        for (const part of parts) {
+            if (part === 'ctrl' || part === 'control') {
+                needsCtrl = true;
+            } else if (part === 'shift') {
+                needsShift = true;
+            } else if (part === 'alt') {
+                needsAlt = true;
+            } else {
+                key = part;
+            }
+        }
+        
+        // イベントと比較
+        const ctrlMatch = needsCtrl === (event.ctrlKey || event.metaKey);
+        const shiftMatch = needsShift === event.shiftKey;
+        const altMatch = needsAlt === event.altKey;
+        
+        // キーの比較（大文字小文字を区別しない）
+        let keyMatch = false;
+        if (key.length === 1) {
+            // 文字キー
+            keyMatch = event.key.toLowerCase() === key.toLowerCase();
+        } else {
+            // 特殊キー（数字など）
+            keyMatch = event.key.toLowerCase() === key.toLowerCase();
+        }
+        
+        return ctrlMatch && shiftMatch && altMatch && keyMatch;
     },
 
     // ============================================================
